@@ -36,18 +36,35 @@ collection.
 
 ## Status
 
-**Phase 1** — backend skeleton with mock track data: create/join rooms, set
-config, run a full round loop end-to-end over WebSocket. No Spotify yet.
+**Phase 2** — Spotify OAuth + real libraries:
+
+- Per-player Spotify login (`GET /auth/spotify/login`), server-side token
+  exchange, background library pull (saved songs + playlists).
+- Deezer preview matching (ISRC first, artist+title fallback) makes tracks
+  playable without Spotify Premium; unmatched tracks are dropped.
+- `LibraryProvider` seam: mock provider for tests, Spotify-backed store in prod,
+  Tidal/YT Music slot in later.
+- Full round loop verified end-to-end over REST + WebSocket.
+
+The Flutter client (phase 3) is not built yet.
 
 ## Running the backend
 
-Requires Node 18+ (not yet installed on this machine — see project notes).
+Requires Node 18+.
 
 ```sh
 cd packages/server
 npm install
-npm run dev      # starts on http://localhost:3000
+cp .env.example .env      # fill in Spotify credentials for real linking
+npm run dev               # starts on http://localhost:3000
+
+npm test                  # unit tests
+npm run smoke             # boots the server and plays a full mock game
 ```
+
+Without Spotify credentials the server still runs; use `POST /rooms/:code/link`
+to seed a mock library and play a full game (this is what `npm run smoke`
+exercises).
 
 ## Roadmap
 

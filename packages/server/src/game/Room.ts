@@ -1,4 +1,6 @@
 import { nanoid } from 'nanoid';
+import type { LibraryProvider } from '../providers/LibraryProvider.js';
+import { MockLibraryProvider } from '../providers/LibraryProvider.js';
 import { TypedEmitter } from '../util/TypedEmitter.js';
 import {
   DEFAULT_CONFIG,
@@ -11,7 +13,7 @@ import {
   type RoomSnapshot,
   type Track,
 } from '../types/index.js';
-import { catalog, mockLibraryFor, shuffle } from './mockTracks.js';
+import { shuffle } from './mockTracks.js';
 
 /** Points awarded per correct axis of a guess. */
 export const POINTS = { song: 100, owner: 100 } as const;
@@ -44,7 +46,11 @@ export class Room extends TypedEmitter<RoomEvents> {
   currentRoundIndex = -1;
   private roundTimer: NodeJS.Timeout | null = null;
 
-  constructor(code: string, host: { id: string; name: string }) {
+  constructor(
+    code: string,
+    host: { id: string; name: string },
+    private readonly library: LibraryProvider = new MockLibraryProvider(),
+  ) {
     super();
     this.code = code;
     this.hostId = host.id;
@@ -56,7 +62,16 @@ export class Room extends TypedEmitter<RoomEvents> {
   addPlayer(id: string, name: string): Player {
     const existing = this.players.get(id);
     if (existing) return existing;
-    const player: Player = { id, name, socketId: null, connected: false, linked: false, score: 0 };
+    const player: Player = {
+      id,
+      name,
+      socketId: null,
+      connected: false,
+      linked: false,
+      collecting: false,
+      librarySize: 0,
+      score: 0,
+    };
     this.players.set(id, player);
     return player;
   }
@@ -99,7 +114,7 @@ export class Room extends TypedEmitter<RoomEvents> {
 
     const tagged: PooledTrack[] = [];
     for (const p of players) {
-      for (const t of mockLibraryFor(p.id, perUser)) {
+      for (const t of this.library.getLibrary(p.id, perUser)) {
         tagged.push({ ...t, ownerPlayerId: p.id });
       }
     }
@@ -144,9 +159,16 @@ export class Room extends TypedEmitter<RoomEvents> {
     this.roundTimer = setTimeout(() => this.reveal(), this.config.roundSeconds * 1000);
   }
 
-  /** Real track plus 3 decoys from the catalog, shuffled. */
+  /** Real track plus up to 3 distinct decoys drawn from the game pool, shuffled. */
   private buildChoices(track: PooledTrack): Track[] {
-    const decoys = shuffle(catalog().filter((t) => t.id !== track.id)).slice(0, 3);
+    const seen = new Set<string>([track.id]);
+    const decoys: Track[] = [];
+    for (const t of shuffle([...this.pool])) {
+      if (seen.has(t.id)) continue;
+      seen.add(t.id);
+      decoys.push({ id: t.id, title: t.title, artist: t.artist, previewUrl: '' });
+      if (decoys.length === 3) break;
+    }
     const real: Track = { id: track.id, title: track.title, artist: track.artist, previewUrl: '' };
     return shuffle([real, ...decoys]);
   }
@@ -189,12 +211,12 @@ export class Room extends TypedEmitter<RoomEvents> {
     this.emit('round:reveal', { index: round.index, track: round.track, scores: deltas });
     this.emitState();
 
-    // Advance after a short reveal window.
+    // Advance after the reveal window.
     this.roundTimer = setTimeout(() => {
       this.currentRoundIndex += 1;
       if (this.currentRoundIndex >= this.totalRounds) this.end();
       else this.startRound();
-    }, 5000);
+    }, this.config.revealSeconds * 1000);
   }
 
   private end(): void {

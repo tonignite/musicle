@@ -1,5 +1,8 @@
 import type { FastifyInstance } from 'fastify';
+import { config } from '../config.js';
 import { makePlayerId } from '../game/Room.js';
+import { mockLibraryFor } from '../game/mockTracks.js';
+import { libraryStore } from '../library/index.js';
 import { rooms } from '../rooms/RoomManager.js';
 import type { RoomConfig } from '../types/index.js';
 
@@ -58,14 +61,19 @@ export async function roomRoutes(app: FastifyInstance): Promise<void> {
     },
   );
 
-  // Mock "link a music account" (phase 2: real Spotify OAuth callback).
+  // Dev-only "link" that seeds a mock library, so a full game can run without
+  // Spotify. Real linking goes through GET /auth/spotify/login (see auth.ts).
   app.post<{ Params: { code: string }; Body: { playerId?: string } }>(
     '/rooms/:code/link',
     async (req, reply) => {
       const room = rooms.require(req.params.code);
       const player = req.body?.playerId ? room.players.get(req.body.playerId) : undefined;
       if (!player) return reply.code(404).send({ error: 'player not in room' });
+      const tracks = mockLibraryFor(player.id, config.libraryTargetSize);
+      libraryStore.set(player.id, tracks);
       player.linked = true;
+      player.collecting = false;
+      player.librarySize = tracks.length;
       room.emit('state', room.snapshot());
       return { snapshot: room.snapshot() };
     },

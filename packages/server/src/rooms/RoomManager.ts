@@ -1,4 +1,5 @@
 import { makeRoomCode, Room } from '../game/Room.js';
+import { libraryStore } from '../library/index.js';
 
 /**
  * In-memory registry of active game sessions. Phase 1 keeps everything in
@@ -11,7 +12,7 @@ export class RoomManager {
   create(host: { id: string; name: string }): Room {
     let code = makeRoomCode();
     while (this.rooms.has(code)) code = makeRoomCode();
-    const room = new Room(code, host);
+    const room = new Room(code, host, libraryStore);
     this.rooms.set(code, room);
     return room;
   }

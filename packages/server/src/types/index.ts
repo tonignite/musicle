@@ -19,6 +19,8 @@ export interface RoomConfig {
   totalRounds: number;
   /** Seconds a player has to guess in a round. */
   roundSeconds: number;
+  /** Seconds the answer is shown before advancing to the next round. */
+  revealSeconds: number;
 }
 
 export const DEFAULT_CONFIG: RoomConfig = {
@@ -26,6 +28,7 @@ export const DEFAULT_CONFIG: RoomConfig = {
   songsPerUser: 5,
   totalRounds: 15,
   roundSeconds: 20,
+  revealSeconds: 5,
 };
 
 export interface Player {
@@ -34,8 +37,12 @@ export interface Player {
   /** Socket.IO connection id, or null while disconnected. */
   socketId: string | null;
   connected: boolean;
-  /** Whether this player has linked a music account (mocked in phase 1). */
+  /** Whether this player has a linked account with a collected library. */
   linked: boolean;
+  /** True while their library is being pulled + preview-matched. */
+  collecting: boolean;
+  /** Number of preview-ready tracks collected (0 until linked). */
+  librarySize: number;
   score: number;
 }
 
