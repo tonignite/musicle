@@ -46,6 +46,26 @@ export interface Player {
   score: number;
 }
 
+/** Which music service a player linked to build their library. */
+export type ProviderId = 'tidal' | 'spotify';
+
+/** OAuth tokens for a linked music account. Shared across providers. */
+export interface AccountTokens {
+  accessToken: string;
+  refreshToken: string;
+  /** Epoch ms when accessToken expires. */
+  expiresAt: number;
+}
+
+/** A track pulled from a provider's library, before preview matching. */
+export interface CandidateTrack {
+  /** Provider-native track id (Tidal/Spotify/etc). */
+  providerId: string;
+  title: string;
+  artist: string;
+  isrc: string | null;
+}
+
 /** A track once matched to a playable preview clip. */
 export interface Track {
   id: string;

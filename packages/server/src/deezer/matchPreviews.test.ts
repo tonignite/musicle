@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
-import type { CandidateTrack } from '../spotify/SpotifyClient.js';
+import type { CandidateTrack } from '../types/index.js';
 import { matchPreviews } from './matchPreviews.js';
 
 const realFetch = globalThis.fetch;
@@ -21,7 +21,7 @@ function stubFetch(routes: (url: string) => unknown) {
 }
 
 const cand = (over: Partial<CandidateTrack>): CandidateTrack => ({
-  spotifyId: 's1',
+  providerId: 's1',
   title: 'Song',
   artist: 'Artist',
   isrc: null,
@@ -34,9 +34,9 @@ test('matches by ISRC and keeps Spotify metadata with the Deezer preview', async
       ? { id: 42, title: 'deezer title', preview: 'https://cdn/preview.mp3' }
       : undefined,
   );
-  const [track] = await matchPreviews([cand({ spotifyId: 'x', title: 'Real', artist: 'Band', isrc: 'USABC1234567' })]);
+  const [track] = await matchPreviews([cand({ providerId: 'x', title: 'Real', artist: 'Band', isrc: 'USABC1234567' })]);
   assert.equal(track?.id, 'x');
-  assert.equal(track?.title, 'Real'); // Spotify title, not Deezer's
+  assert.equal(track?.title, 'Real'); // provider title, not Deezer's
   assert.equal(track?.previewUrl, 'https://cdn/preview.mp3');
 });
 
@@ -55,6 +55,6 @@ test('drops tracks with no findable preview', async () => {
     if (url.includes('/search')) return { data: [] };
     return undefined;
   });
-  const out = await matchPreviews([cand({}), cand({ spotifyId: 's2' })]);
+  const out = await matchPreviews([cand({}), cand({ providerId: 's2' })]);
   assert.equal(out.length, 0);
 });

@@ -7,13 +7,24 @@ export const config = {
   spotify: {
     clientId: process.env.SPOTIFY_CLIENT_ID ?? '',
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET ?? '',
+    // Spotify requires HTTPS or a loopback IP; plain "localhost" is rejected.
     redirectUri:
-      process.env.SPOTIFY_REDIRECT_URI ?? 'http://localhost:3000/auth/spotify/callback',
+      process.env.SPOTIFY_REDIRECT_URI ?? 'http://127.0.0.1:3000/auth/spotify/callback',
     scopes: [
       'user-library-read',
       'playlist-read-private',
       'playlist-read-collaborative',
     ],
+  },
+
+  tidal: {
+    clientId: process.env.TIDAL_CLIENT_ID ?? '',
+    clientSecret: process.env.TIDAL_CLIENT_SECRET ?? '',
+    redirectUri:
+      process.env.TIDAL_REDIRECT_URI ?? 'http://127.0.0.1:3000/auth/tidal/callback',
+    // Tidal's catalog is region-scoped; collection reads require a country code.
+    countryCode: process.env.TIDAL_COUNTRY_CODE ?? 'US',
+    scopes: ['user.read', 'collection.read', 'playlists.read'],
   },
 
   /** How many tracks to pull/match per player when building their library. */
@@ -29,4 +40,8 @@ export const config = {
 
 export function spotifyConfigured(): boolean {
   return Boolean(config.spotify.clientId && config.spotify.clientSecret);
+}
+
+export function tidalConfigured(): boolean {
+  return Boolean(config.tidal.clientId && config.tidal.clientSecret);
 }

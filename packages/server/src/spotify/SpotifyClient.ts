@@ -1,19 +1,9 @@
 import { config } from '../config.js';
+import type { AccountTokens, CandidateTrack } from '../types/index.js';
 
-export interface SpotifyTokens {
-  accessToken: string;
-  refreshToken: string;
-  /** Epoch ms when accessToken expires. */
-  expiresAt: number;
-}
-
-/** A track as pulled from Spotify, before preview matching. */
-export interface CandidateTrack {
-  spotifyId: string;
-  title: string;
-  artist: string;
-  isrc: string | null;
-}
+/** Spotify uses the shared token shape. */
+export type SpotifyTokens = AccountTokens;
+export type { CandidateTrack } from '../types/index.js';
 
 const ACCOUNTS = 'https://accounts.spotify.com';
 const API = 'https://api.spotify.com/v1';
@@ -122,7 +112,7 @@ async function getJson<T>(url: string, accessToken: string): Promise<T> {
 function toCandidate(t: SpotifyTrackObject | null): CandidateTrack | null {
   if (!t || t.is_local || !t.id) return null;
   return {
-    spotifyId: t.id,
+    providerId: t.id,
     title: t.name,
     artist: t.artists.map((a) => a.name).join(', '),
     isrc: t.external_ids?.isrc ?? null,
@@ -142,7 +132,7 @@ export async function pullLibrary(tokens: SpotifyTokens, limit: number): Promise
     const page: Paging<{ track: SpotifyTrackObject | null }> = await getJson(url, tokens.accessToken);
     for (const item of page.items) {
       const c = toCandidate(item.track);
-      if (c) out.set(c.spotifyId, c);
+      if (c) out.set(c.providerId, c);
     }
     url = page.next;
   }
@@ -164,7 +154,7 @@ export async function pullLibrary(tokens: SpotifyTokens, limit: number): Promise
         const page: Paging<{ track: SpotifyTrackObject | null }> = await getJson(tUrl, tokens.accessToken);
         for (const item of page.items) {
           const c = toCandidate(item.track);
-          if (c) out.set(c.spotifyId, c);
+          if (c) out.set(c.providerId, c);
         }
         tUrl = page.next;
       }

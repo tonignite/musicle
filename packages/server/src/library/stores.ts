@@ -1,19 +1,19 @@
 import { shuffle } from '../game/mockTracks.js';
 import type { LibraryProvider } from '../providers/LibraryProvider.js';
-import type { SpotifyTokens } from '../spotify/SpotifyClient.js';
-import type { Track } from '../types/index.js';
+import type { AccountTokens, Track } from '../types/index.js';
 
 /**
- * Per-player OAuth tokens. Kept out of the room snapshot so they never reach
- * clients. Phase 4 moves this to encrypted persistence.
+ * Per-player OAuth tokens (any provider — Spotify or Tidal). Kept out of the
+ * room snapshot so they never reach clients. Phase 4 moves this to encrypted
+ * persistence.
  */
 export class TokenStore {
-  private readonly tokens = new Map<string, SpotifyTokens>();
+  private readonly tokens = new Map<string, AccountTokens>();
 
-  set(playerId: string, tokens: SpotifyTokens): void {
+  set(playerId: string, tokens: AccountTokens): void {
     this.tokens.set(playerId, tokens);
   }
-  get(playerId: string): SpotifyTokens | undefined {
+  get(playerId: string): AccountTokens | undefined {
     return this.tokens.get(playerId);
   }
   has(playerId: string): boolean {

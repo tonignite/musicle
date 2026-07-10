@@ -1,9 +1,8 @@
-import type { CandidateTrack } from '../spotify/SpotifyClient.js';
-import type { Track } from '../types/index.js';
+import type { CandidateTrack, Track } from '../types/index.js';
 
 /**
  * Deezer's public API needs no auth and still serves 30s preview clips, so we
- * use it to make Spotify tracks playable: match by ISRC (exact) first, then
+ * use it to make provider tracks playable: match by ISRC (exact) first, then
  * fall back to an artist+title search. Tracks with no findable preview are
  * dropped from the pool.
  */
@@ -46,8 +45,8 @@ async function bySearch(artist: string, title: string): Promise<DeezerTrack | nu
 async function matchOne(c: CandidateTrack): Promise<Track | null> {
   const found = (c.isrc && (await byIsrc(c.isrc))) || (await bySearch(c.artist, c.title));
   if (!found?.preview) return null;
-  // Keep Spotify's title/artist (canonical) but Deezer's playable preview.
-  return { id: c.spotifyId, title: c.title, artist: c.artist, previewUrl: found.preview };
+  // Keep the provider's title/artist (canonical) but Deezer's playable preview.
+  return { id: c.providerId, title: c.title, artist: c.artist, previewUrl: found.preview };
 }
 
 /** Run tasks with bounded concurrency to stay friendly to Deezer's rate limit. */
