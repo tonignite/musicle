@@ -1,0 +1,23 @@
+# OS / editor
+.directory
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Node
+node_modules/
+dist/
+*.log
+.env
+.env.*
+!.env.example
+
+# Flutter / Dart
+apps/mobile/.dart_tool/
+apps/mobile/build/
+apps/mobile/.flutter-plugins*
+apps/mobile/.packages
+apps/mobile/ios/Pods/
+apps/mobile/android/.gradle/
+apps/mobile/**/GeneratedPluginRegistrant.*
