@@ -25,24 +25,26 @@ test('config is locked once the game leaves the lobby', () => {
   const room = readyRoom();
   room.start();
   assert.throws(() => room.setConfig({ songsPerUser: 9 }), /lobby/);
+  room.dispose();
 });
 
 test('pool has songsPerUser tracks per player in per-user mode', () => {
   const room = readyRoom();
-  let firstStart: { choices: unknown[] } | null = null;
-  room.on('round:start', (p) => (firstStart ??= p));
+  const starts: Array<{ choices: unknown[] }> = [];
+  room.on('round:start', (p) => starts.push(p));
   room.start();
   // 3 players * 3 songs = 9 rounds total.
   assert.equal(room.snapshot().totalRounds, 9);
   assert.equal(room.phase, 'round');
-  assert.ok(firstStart, 'a round started');
-  assert.equal(firstStart!.choices.length, 4, 'real track + 3 decoys');
+  assert.equal(starts.length, 1, 'a round started');
+  assert.equal(starts[0]?.choices.length, 4, 'real track + 3 decoys');
+  room.dispose();
 });
 
 test('correct song + owner guess scores both axes', () => {
   const room = readyRoom();
-  let reveal: { track: { id: string; ownerPlayerId: string } } | null = null;
-  room.on('round:reveal', (p) => (reveal ??= p));
+  const reveals: Array<{ track: { id: string; ownerPlayerId: string } }> = [];
+  room.on('round:reveal', (p) => reveals.push(p));
   room.start();
 
   // Reach into the current round's answer to simulate a perfect guess.
@@ -55,7 +57,7 @@ test('correct song + owner guess scores both axes', () => {
   room.submitGuess('p2', id, 'wrong');
   room.submitGuess('p3', 'wrong', 'wrong'); // triggers early reveal (all guessed)
 
-  assert.ok(reveal, 'round revealed after everyone guessed');
+  assert.equal(reveals.length, 1, 'round revealed after everyone guessed');
   assert.equal(room.players.get('host')!.score, POINTS.song + POINTS.owner);
   assert.equal(room.players.get('p2')!.score, POINTS.song);
   assert.equal(room.players.get('p3')!.score, 0);
